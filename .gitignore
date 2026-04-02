@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.env
+
+# Node / Vite
+node_modules/
+dist/
+.env
+.env.local
+.env.production
+
+# macOS
+.DS_Store
+
+# GCP / credentials
+*.json
+service-account*.json
+application_default_credentials.json
+
+# IDEs
+.vscode/
+.idea/
