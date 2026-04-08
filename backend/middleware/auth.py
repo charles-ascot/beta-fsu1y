@@ -21,6 +21,10 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path.rstrip("/") or "/"
 
+        # Let CORS preflight (OPTIONS) through so CORSMiddleware can handle it
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         if path in EXEMPT_PATHS or path.startswith("/v1/keys"):
             return await call_next(request)
 
