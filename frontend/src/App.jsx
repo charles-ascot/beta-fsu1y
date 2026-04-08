@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { getHealth } from './services/api'
+import { getRacecards } from './services/api'
 import Dashboard from './pages/Dashboard'
 import KeyManager from './pages/KeyManager'
 
@@ -9,10 +9,11 @@ const NAV = ['Dashboard', 'Key Manager']
 export default function App() {
   const [page, setPage] = useState('Dashboard')
 
-  const { data: health } = useQuery({
-    queryKey: ['health'],
-    queryFn: getHealth,
+  const { isSuccess: connected } = useQuery({
+    queryKey: ['racecards', 'today'],
+    queryFn: () => getRacecards({ day: 'today' }),
     refetchInterval: 30_000,
+    retry: false,
   })
 
   return (
@@ -38,8 +39,8 @@ export default function App() {
             </button>
           ))}
           <div className="flex items-center gap-2 text-xs text-slate-500">
-            <div className={`w-1.5 h-1.5 rounded-full ${health ? 'bg-chimera-green' : 'bg-chimera-red'}`} />
-            {health ? 'API online' : 'API offline'}
+            <div className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-chimera-green' : 'bg-chimera-red'}`} />
+            {connected ? 'Connected' : 'Not connected'}
           </div>
         </div>
       </header>
