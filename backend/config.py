@@ -31,7 +31,12 @@ class Settings(BaseSettings):
     cache_ttl_meetings: int   = 600    # 10 min
 
     # ── CORS ──────────────────────────────────────────────────────────────────
-    allowed_origins: List[str] = ["*"]
+    # Pass as comma-separated string from gcloud --set-env-vars
+    allowed_origins: str = "*"
+
+    @property
+    def allowed_origins_list(self) -> List[str]:
+        return [o.strip() for o in self.allowed_origins.split(",")]
 
     class Config:
         env_file = ".env"
