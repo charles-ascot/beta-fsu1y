@@ -5,7 +5,7 @@ steps:
     args:
       - run
       - deploy
-      - chimera-fsu-1y
+      - beta-fsu1y
       - --source=.
       - --region=europe-west2
       - --project=chimera-v4
