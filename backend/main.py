@@ -36,6 +36,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(APIKeyMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins_list,
@@ -43,8 +45,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.add_middleware(APIKeyMiddleware)
 
 # Core racing endpoints
 app.include_router(racecards.router, prefix="/v1", tags=["Racecards"])
