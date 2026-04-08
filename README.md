@@ -23,7 +23,7 @@
 
 ## What This FSU Is
 
-Fractional Service Unit wrapping [The Racing API](https://theracingapi.com).
+Fractional Service Unit wrapping: [The Racing API](https://theracingapi.com).
 Provides UK/Ireland/HK horse racing data: racecards, runners, multi-bookmaker
 odds, results, form, and full reference lookups — via a secured REST API with
 its own key management layer.
