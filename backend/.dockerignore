@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+.DS_Store
+.git/
+.gitignore
+cloudbuild.yaml
+Procfile
+*.md

@@ -17,7 +17,7 @@ steps:
       - --max-instances=3
       - --port=8080
       - --set-secrets=RACING_API_USER=fsu1y-racing-api-user:latest,RACING_API_PASS=fsu1y-racing-api-pass:latest,ADMIN_KEY=fsu1y-admin-key:latest
-      - --set-env-vars=GCP_PROJECT=chimera-v4,ALLOWED_ORIGINS=["https://fsu-1y.pages.dev"]
+      - '--set-env-vars=GCP_PROJECT=chimera-v4,ALLOWED_ORIGINS=["https://fsu-1y.pages.dev"]'
 
 timeout: '600s'
 options:
