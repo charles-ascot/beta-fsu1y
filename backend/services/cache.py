@@ -35,14 +35,15 @@ async def get_cached(key: str) -> Optional[Any]:
     if time.time() > entry.get("expires_at", 0):
         await db.collection(settings.firestore_cache_collection).document(key).delete()
         return None
-    return entry.get("data")
+    raw = entry.get("data")
+    return json.loads(raw) if isinstance(raw, str) else raw
 
 
 async def set_cached(key: str, data: Any, ttl: int) -> None:
     db = _get_db()
     await db.collection(settings.firestore_cache_collection).document(key).set(
         {
-            "data":       data,
+            "data":       json.dumps(data),
             "expires_at": time.time() + ttl,
             "source":     "the-racing-api",
             "cached_at":  time.time(),
