@@ -78,7 +78,7 @@ GitHub (main branch)
 | GET | `/v1/keys` | X-Admin-Key | List all keys |
 | DELETE | `/v1/keys/{key_id}` | X-Admin-Key | Revoke a key |
 
-Swagger UI: `https://your-cloud-run-url/docs`
+Swagger UI: `https://beta-fsu1y-950990732577.europe-west2.run.app/docs`
 
 ---
 
@@ -98,12 +98,12 @@ Credentials stored in GCP Secret Manager — never in code.
 # 1. Store Racing API credentials
 gcloud secrets create fsu1y-racing-api-user \
   --replication-policy=automatic --project=chimera-v4
-echo -n "S3bM06ZK5gK5YAf6A2BipFF6" | \
+echo -n "YOUR_RACING_API_USERNAME" | \
   gcloud secrets versions add fsu1y-racing-api-user --data-file=- --project=chimera-v4
 
 gcloud secrets create fsu1y-racing-api-pass \
   --replication-policy=automatic --project=chimera-v4
-echo -n "oHvz4ETlhG2LCEb69eoKcD92" | \
+echo -n "YOUR_RACING_API_PASSWORD" | \
   gcloud secrets versions add fsu1y-racing-api-pass --data-file=- --project=chimera-v4
 
 # 2. Generate and store admin key
@@ -111,12 +111,18 @@ python3 -c "import secrets; print('admin_' + secrets.token_urlsafe(32))"
 echo -n "admin_YOUR_GENERATED_KEY" | \
   gcloud secrets versions add fsu1y-admin-key --data-file=- --project=chimera-v4
 
-# 3. Grant Cloud Run SA access to secrets
-gcloud projects add-iam-policy-binding chimera-v4 \
-  --member="serviceAccount:$(gcloud iam service-accounts list \
-    --filter='displayName:Default compute service account' \
-    --format='value(email)' --project=chimera-v4)" \
-  --role="roles/secretmanager.secretAccessor"
+# 3. Grant Cloud Run SA access to each secret individually
+gcloud secrets add-iam-policy-binding fsu1y-racing-api-user \
+  --member="serviceAccount:950990732577-compute@developer.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor" --project=chimera-v4
+
+gcloud secrets add-iam-policy-binding fsu1y-racing-api-pass \
+  --member="serviceAccount:950990732577-compute@developer.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor" --project=chimera-v4
+
+gcloud secrets add-iam-policy-binding fsu1y-admin-key \
+  --member="serviceAccount:950990732577-compute@developer.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor" --project=chimera-v4
 
 # 4. Firestore composite index for key auth
 gcloud firestore indexes composite create \
@@ -133,9 +139,12 @@ gcloud firestore indexes composite create \
 Triggered automatically on push to `main`. Manual trigger:
 
 ```bash
-cd backend
 gcloud builds submit --config=cloudbuild.yaml --project=chimera-v4
 ```
+
+Cloud Run URL: `https://beta-fsu1y-950990732577.europe-west2.run.app`
+
+Swagger UI: `https://beta-fsu1y-950990732577.europe-west2.run.app/docs`
 
 ---
 
@@ -164,10 +173,10 @@ Environment variables (Production):
 After deployment:
 
 ```bash
-curl -X POST https://your-cloud-run-url/v1/keys \
+curl -X POST https://beta-fsu1y-950990732577.europe-west2.run.app/v1/keys \
   -H "X-Admin-Key: your-admin-key" \
   -H "Content-Type: application/json" \
-  -d '{"name": "mark-racing-dashboard"}'
+  -d '{"name": "frontend-prod"}'
 ```
 
 ---
