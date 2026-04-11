@@ -57,7 +57,7 @@ export default function Dashboard() {
     refetchInterval: 60_000,
   })
 
-  const races   = useMemo(() => data?.data?.races ?? data?.data ?? [], [data])
+  const races   = useMemo(() => data?.data?.racecards ?? data?.data?.races ?? (Array.isArray(data?.data) ? data.data : []), [data])
   const grouped = useMemo(() => groupByCourse(races), [races])
   const cache   = data?.cache ?? null
 
