@@ -54,7 +54,10 @@ class RacingAPIClient:
             return {**cached, "cache": "HIT"}
         data = await self._get(path, params)
         payload = {"data": data, "cache": "MISS"}
-        await set_cached(cache_key, payload, ttl)
+        try:
+            await set_cached(cache_key, payload, ttl)
+        except Exception:
+            pass  # Cache write can fail (e.g. >1MB doc) — still return data
         return {**payload, "cache": "MISS"}
 
     # ── Racecards ─────────────────────────────────────────────────────────────
