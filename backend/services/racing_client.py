@@ -71,10 +71,10 @@ class RacingAPIClient:
         skip: int = 0,
     ) -> dict:
         params = {"day": day, "limit": limit, "skip": skip}
-        if region:     params["region"] = region
+        if region:     params["region_codes"] = region
         if race_class: params["class"]  = race_class
-        cache_key = make_cache_key("racecards", **params)
-        return await self._cached_get(cache_key, "/v1/racecards/basic", params, settings.cache_ttl_racecards)
+        cache_key = make_cache_key("racecards_std", **params)
+        return await self._cached_get(cache_key, "/v1/racecards/standard", params, settings.cache_ttl_racecards)
 
     async def get_racecard_pro(self, race_id: str) -> dict:
         cache_key = make_cache_key("racecard_pro", race_id=race_id)

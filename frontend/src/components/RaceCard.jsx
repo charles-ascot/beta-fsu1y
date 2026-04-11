@@ -8,10 +8,11 @@
  * Layout note: this is the CORRECT orientation per Mark's specification.
  * Runners run vertically (rows), bookmakers run horizontally (columns).
  * Read across a row to compare all bookies for one horse.
+ *
+ * Odds come embedded in the /v1/racecards/standard response — each
+ * runner has an `odds` array with all bookmaker prices.
  */
 import React, { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { getOdds } from '../services/api'
 
 function classColour(cls) {
   const n = parseInt(cls)
@@ -21,58 +22,33 @@ function classColour(cls) {
   return 'text-slate-500'
 }
 
-function OddsGrid({ raceId }) {
-  const { data, isLoading, error } = useQuery({
-    queryKey:        ['odds', raceId],
-    queryFn:         () => getOdds(raceId),
-    refetchInterval: 60_000,
-    staleTime:       30_000,
-  })
-
+function OddsGrid({ runners: runnerList }) {
   const { bookmakers, runners, bestPrices } = useMemo(() => {
-    const raw = data?.data ?? data ?? null
-    if (!raw) return { bookmakers: [], runners: [], bestPrices: {} }
+    if (!runnerList?.length) return { bookmakers: [], runners: [], bestPrices: {} }
 
-    // The Racing API odds response structure:
-    // { runners: [{ runner_name, odds: [{ bookmaker, price }] }] }
-    const runnerList = raw.runners ?? raw.data?.runners ?? []
-    if (!runnerList.length) return { bookmakers: [], runners: [], bestPrices: {} }
-
-    // Collect all bookmaker names
+    // Collect all bookmaker names from embedded odds
     const bookSet = new Set()
     runnerList.forEach(r => {
-      (r.odds ?? []).forEach(o => bookSet.add(o.bookmaker ?? o.name ?? o.exchange))
+      (r.odds ?? []).forEach(o => bookSet.add(o.bookmaker))
     })
     const bookmakers = [...bookSet].filter(Boolean).sort()
 
-    // Best price per runner
+    // Best price per runner (highest decimal odds)
     const bestPrices = {}
     runnerList.forEach(r => {
-      const prices = (r.odds ?? []).map(o => parseFloat(o.decimal ?? o.price ?? 0)).filter(p => p > 0)
-      bestPrices[r.runner_id ?? r.horse_id ?? r.runner_name] = prices.length ? Math.max(...prices) : 0
+      const prices = (r.odds ?? []).map(o => parseFloat(o.decimal ?? 0)).filter(p => p > 0)
+      bestPrices[r.horse_id ?? r.horse] = prices.length ? Math.max(...prices) : 0
     })
 
     return { bookmakers, runners: runnerList, bestPrices }
-  }, [data])
-
-  if (isLoading) return (
-    <div className="px-4 py-6 text-xs text-slate-500 text-center">Loading odds…</div>
-  )
-
-  if (error) return (
-    <div className="px-4 py-4 text-xs text-chimera-amber text-center">
-      {error.response?.status === 403
-        ? 'Odds require Standard plan or above on The Racing API'
-        : 'Failed to load odds'}
-    </div>
-  )
+  }, [runnerList])
 
   if (!runners.length) return (
-    <div className="px-4 py-6 text-xs text-slate-500 text-center">No odds available yet</div>
+    <div className="px-4 py-6 text-xs text-slate-500 text-center">No runners available</div>
   )
 
   if (!bookmakers.length) return (
-    <div className="px-4 py-6 text-xs text-slate-500 text-center">No bookmaker odds available</div>
+    <div className="px-4 py-6 text-xs text-slate-500 text-center">No bookmaker odds available yet</div>
   )
 
   return (
@@ -97,9 +73,9 @@ function OddsGrid({ raceId }) {
         <tbody>
           {runners
             .filter(r => !r.non_runner)
-            .sort((a, b) => (a.number ?? 99) - (b.number ?? 99))
+            .sort((a, b) => (parseInt(a.number) || 99) - (parseInt(b.number) || 99))
             .map((runner, ri) => {
-              const runnerId = runner.runner_id ?? runner.horse_id ?? runner.runner_name
+              const runnerId = runner.horse_id ?? runner.horse
               const best = bestPrices[runnerId] ?? 0
 
               return (
@@ -112,7 +88,7 @@ function OddsGrid({ raceId }) {
                   {/* Runner name + jockey */}
                   <td className="px-4 py-2 sticky left-0 bg-inherit">
                     <div className="font-medium text-white whitespace-nowrap">
-                      {runner.runner_name ?? runner.name}
+                      {runner.horse ?? runner.runner_name ?? runner.name}
                     </div>
                     {runner.jockey && (
                       <div className="text-slate-500 text-xs mt-0.5">{runner.jockey}</div>
@@ -127,10 +103,10 @@ function OddsGrid({ raceId }) {
                   {/* Price per bookmaker */}
                   {bookmakers.map(bk => {
                     const oddsEntry = (runner.odds ?? []).find(
-                      o => (o.bookmaker ?? o.name ?? o.exchange) === bk
+                      o => o.bookmaker === bk
                     )
                     const price = oddsEntry
-                      ? parseFloat(oddsEntry.decimal ?? oddsEntry.price ?? 0)
+                      ? parseFloat(oddsEntry.decimal ?? 0)
                       : null
                     const isBest = price && price === best
 
@@ -144,7 +120,7 @@ function OddsGrid({ raceId }) {
                                 : 'text-slate-300'
                             }`}
                           >
-                            {price.toFixed(2)}
+                            {oddsEntry.fractional ?? price.toFixed(2)}
                           </span>
                         ) : (
                           <span className="text-slate-600">—</span>
@@ -168,22 +144,11 @@ function OddsGrid({ raceId }) {
             })}
         </tbody>
       </table>
-
-      {/* Cache indicator */}
-      {data?.cache && (
-        <div className="px-4 py-1 text-right">
-          <span className={`text-xs ${data.cache === 'HIT' ? 'text-chimera-green' : 'text-chimera-amber'}`}>
-            odds cache {data.cache}
-          </span>
-        </div>
-      )}
     </div>
   )
 }
 
 export default function RaceCard({ race, isExpanded, onToggle }) {
-  const raceId = race.race_id ?? race.id
-
   return (
     <div>
       {/* Race row — always visible */}
@@ -231,10 +196,10 @@ export default function RaceCard({ race, isExpanded, onToggle }) {
         </div>
       </button>
 
-      {/* Expanded odds grid */}
+      {/* Expanded odds grid — reads odds from runner data, no separate API call */}
       {isExpanded && (
         <div className="border-t border-chimera-700 bg-chimera-900/50">
-          <OddsGrid raceId={raceId} />
+          <OddsGrid runners={race.runners} />
         </div>
       )}
     </div>
